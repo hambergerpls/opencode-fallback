@@ -24,6 +24,30 @@ export function normalizeFallbackModelsField(
 	return []
 }
 
+function readFallbackModelsFromAgentConfig(
+	agentConfig: Record<string, unknown>
+): string[] {
+	const directModels = normalizeFallbackModelsField(agentConfig.fallback_models)
+	if (directModels.length > 0) return directModels
+
+	const options = agentConfig.options
+	if (isRecord(options)) {
+		const optionModels = normalizeFallbackModelsField(options.fallback_models)
+		if (optionModels.length > 0) return optionModels
+	}
+
+	const request = agentConfig.request
+	if (isRecord(request)) {
+		const body = request.body
+		if (isRecord(body)) {
+			const bodyModels = normalizeFallbackModelsField(body.fallback_models)
+			if (bodyModels.length > 0) return bodyModels
+		}
+	}
+
+	return []
+}
+
 export function readFallbackModels(
 	agentName: string,
 	agents: AgentRecord | undefined
@@ -33,7 +57,7 @@ export function readFallbackModels(
 	const agentConfig = agents[agentName]
 	if (!isRecord(agentConfig)) return []
 
-	return normalizeFallbackModelsField(agentConfig.fallback_models)
+	return readFallbackModelsFromAgentConfig(agentConfig)
 }
 
 export function resolveAgentForSession(
